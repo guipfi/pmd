@@ -61,6 +61,7 @@ productInfos.createOrReplaceTempView("products")
 productNames = spark.sql("SELECT DISTINCT product_id, product_title FROM temp")
 productNames = productNames.dropDuplicates(["product_id"])
 productTable = productNames.join(productInfos, 'product_id')
+productTable.createOrReplaceTempView("products")
 
 ## REVIEWS DUPLICADAS
 
@@ -79,5 +80,7 @@ reviewsTable = reviewsTable.dropDuplicates(["customer_id", "product_id", "star_r
 # print(reviewsTable.count())
 reviewsTable.createOrReplaceTempView("reviews")
 
-# hiveContext.sql("Show Databases").show()
-# df.write.mode("overwrite").saveAsTable("sales.user_reviews")
+reviewsTable.write.mode("overwrite").saveAsTable("default.user_reviews")
+productTable.write.mode("overwrite").saveAsTable("default.products")
+
+hiveContext.sql("Show tables;")
