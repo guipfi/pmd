@@ -32,32 +32,32 @@ hiveContext = HiveContext(spark.sparkContext)
 
 # Consulta 4
 # Retornar média de estrelas das marcas presentes no sistema
-marcas = ["apple", "microsoft", "dell", "nvidia", "sony", "polaroid", "hp", "tp-link", "lenovo", "linksys", "nintendo", "philips", "canon", "panasonic", "kingston", "hitachi", "fermax", "asus", "xiaomi", "nokia", "logitech", "samsung", "motorola", "amazfit", "altera", "cisco", "lg", "evga", "microsoft", "philco", "western", "panasonic", "seagate", "alienware", "thermaltake", "sandisk", "ibm", "compaq"]
+marcas = ["apple", "microsoft", "dell", "nvidia", "sony", "polaroid", "hp", "tp-link", "lenovo", "linksys", "nintendo", "philips", "canon", "panasonic", "kingston", "hitachi", "fermax", "asus", "xiaomi", "nokia", "logitech", "samsung", "motorola", "amazfit", "altera", "cisco", "lg", "evga", "microsoft", "philco", "western", "panasonic", "seagate", "alienware", "thermaltake", "sandisk", "ibm", "compaq", "acer", "toshiba", "belkin", "siemens", "crucial", "fujitsu", "d-link", "rayovac", "steelseries", "duracell", "benq", "hitachi", "asrock", "zotac", "gigabyte", "silverstone", "blackberry", "fujifilm", "logisys", "kodak", "casio", "yamaha"]
 
-# consulta4 = hiveContext.sql("SELECT product_title FROM products")
+consulta4 = hiveContext.sql("SELECT product_title FROM products")
 
-# consulta4.show()
+consulta4.show()
 
-# df = consulta4.select("*").toPandas()
+df = consulta4.select("*").toPandas()
 
-# marcas_produtos = []
+marcas_produtos = []
 
-# for index, row in df.iterrows():
-#   found = 0
-#   for marca in marcas:
-#     nome_produto = row["product_title"]
-#     nome_produto = nome_produto.lower()
-#     if marca in nome_produto:
-#       found = 1
-#       marcas_produtos.append(marca)
-#       break
-#   if found == 0:
-#     marcas_produtos.append("unknown")
+for index, row in df.iterrows():
+  found = 0
+  for marca in marcas:
+    nome_produto = row["product_title"]
+    nome_produto = nome_produto.lower()
+    if marca in nome_produto:
+      found = 1
+      marcas_produtos.append(marca)
+      break
+  if found == 0:
+    marcas_produtos.append("unknown")
 
-# df["marca"] = marcas_produtos
-# df.to_csv('marcas_produtos.csv')
+df["marca"] = marcas_produtos
+df.to_csv('marcas_produtos.csv', sep= '\t')
 
-marcas = spark.read.csv("./marcas_produtos.csv", header=True)
+marcas = spark.read.csv("./marcas_produtos.csv", sep= '\t', header=True)
 marcas.createOrReplaceTempView("marcas")
 
 products = hiveContext.sql("SELECT * FROM products")
@@ -73,5 +73,6 @@ marcas = marcas.withColumn("columnindex", row_number().over(w))
 productTable = products.join(marcas, "columnindex").drop(products.columnindex)
 productTable.write.mode("overwrite").saveAsTable("default.products_with_brands")
 
-products = hiveContext.sql("SELECT * FROM products_with_brands")
-products.show()
+brands = hiveContext.sql("SELECT marca, avg(star_average) FROM products_with_brands WHERE marca <> 'unknown' GROUP BY marca ORDER BY avg(star_average) DESC")
+
+brands.show()
