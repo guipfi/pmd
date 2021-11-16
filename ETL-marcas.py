@@ -8,7 +8,7 @@ from pyspark import HiveContext
 from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
-    .appName("myApp") \
+    .appName("brands") \
     .enableHiveSupport() \
     .getOrCreate()
 
@@ -54,14 +54,14 @@ for index, row in df.iterrows():
   if found == 0:
     marcas_produtos.append("unknown")
 
-df["marca"] = marcas_produtos
+df["brand"] = marcas_produtos
 df.to_csv('marcas_produtos.csv', sep= '\t')
 
 marcas = spark.read.csv("./marcas_produtos.csv", sep= '\t', header=True)
 marcas.createOrReplaceTempView("marcas")
 
 products = hiveContext.sql("SELECT * FROM products")
-marcas = spark.sql("SELECT marca FROM marcas")
+marcas = spark.sql("SELECT brand FROM marcas")
 
 from pyspark.sql.window import Window
 from pyspark.sql.functions import monotonically_increasing_id, row_number
@@ -73,6 +73,6 @@ marcas = marcas.withColumn("columnindex", row_number().over(w))
 productTable = products.join(marcas, "columnindex").drop(products.columnindex)
 productTable.write.mode("overwrite").saveAsTable("default.products_with_brands")
 
-brands = hiveContext.sql("SELECT marca, avg(star_average) FROM products_with_brands WHERE marca <> 'unknown' GROUP BY marca ORDER BY avg(star_average) DESC")
+brands = hiveContext.sql("SELECT brand, avg(star_average) FROM products_with_brands WHERE brand <> 'unknown' GROUP BY brand ORDER BY avg(star_average) DESC")
 
 brands.show()
